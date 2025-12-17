@@ -1,0 +1,128 @@
+import { useMemo, useRef } from 'react';
+import { Line } from 'react-chartjs-2';
+import { useDashboard } from '../../context/DashboardContext';
+import {
+  gaussianSmooth,
+  getSmoothedDataLimits,
+  hasCompletionLengthData,
+} from '../../utils/dataProcessor';
+import {
+  getBaseChartOptions,
+  createDataset,
+  createEnvelopeDatasets,
+} from '../../utils/chartConfig';
+import ChartContainer from '../ChartContainer';
+
+export default function CompletionLengthChart() {
+  const { trainingData, smoothingLevel } = useDashboard();
+  const chartRef = useRef(null);
+
+  const chartData = useMemo(() => {
+    if (!trainingData?.log_history) return null;
+    if (!hasCompletionLengthData(trainingData.log_history)) return null;
+
+    const completionData = trainingData.log_history.filter(
+      (entry) => entry['completions/mean_length'] !== undefined
+    );
+    if (completionData.length === 0) return null;
+
+    const rawLengths = completionData.map(
+      (entry) => entry['completions/mean_length']
+    );
+    const rawMaxLengths = completionData.map(
+      (entry) =>
+        entry['completions/max_length'] || entry['completions/mean_length']
+    );
+    const rawMinLengths = completionData.map(
+      (entry) =>
+        entry['completions/min_length'] || entry['completions/mean_length']
+    );
+
+    const smoothedLengths = gaussianSmooth(rawLengths, smoothingLevel);
+    const smoothedMaxLengths = gaussianSmooth(rawMaxLengths, smoothingLevel);
+    const smoothedMinLengths = gaussianSmooth(rawMinLengths, smoothingLevel);
+
+    const labels = completionData.map((entry) => entry.step);
+
+    return {
+      labels,
+      rawLengths,
+      smoothedLengths,
+      smoothedMaxLengths,
+      smoothedMinLengths,
+    };
+  }, [trainingData, smoothingLevel]);
+
+  const options = useMemo(() => {
+    if (!chartData) return null;
+
+    const opts = getBaseChartOptions();
+    opts.scales.y.title = {
+      display: true,
+      text: 'COMPLETION LENGTH',
+      color: 'rgba(255, 255, 255, 0.8)',
+    };
+
+    const allSmoothedData = [
+      ...chartData.smoothedLengths,
+      ...chartData.smoothedMaxLengths,
+      ...chartData.smoothedMinLengths,
+    ];
+    const yLimits = getSmoothedDataLimits(chartData.rawLengths, allSmoothedData);
+    if (yLimits.min !== undefined && yLimits.max !== undefined) {
+      opts.scales.y.min = yLimits.min;
+      opts.scales.y.max = yLimits.max;
+    }
+
+    opts.plugins.tooltip.callbacks = {
+      label: (context) => {
+        const label = context.dataset.label || '';
+        if (label.includes('Upper') || label.includes('Lower')) return null;
+        return `${label}: ${Math.round(context.parsed.y)} tokens`;
+      },
+      filter: (tooltipItem) => {
+        const label = tooltipItem.dataset.label || '';
+        return !label.includes('Upper') && !label.includes('Lower');
+      },
+    };
+
+    return opts;
+  }, [chartData]);
+
+  if (!chartData) return null;
+
+  const envelopeDatasets = createEnvelopeDatasets(
+    chartData.smoothedMaxLengths,
+    chartData.smoothedMinLengths,
+    [153, 102, 255]
+  );
+
+  const data = {
+    labels: chartData.labels,
+    datasets: [
+      ...envelopeDatasets,
+      createDataset(
+        'Completion Length',
+        chartData.smoothedLengths,
+        [153, 102, 255],
+        true
+      ),
+      createDataset(
+        'Completion Length (Raw)',
+        chartData.rawLengths,
+        [153, 102, 255],
+        false
+      ),
+    ],
+  };
+
+  return (
+    <ChartContainer
+      title="Completion Length"
+      chartRef={chartRef}
+      exportFilename="completion-length.png"
+    >
+      <Line ref={chartRef} data={data} options={options} />
+    </ChartContainer>
+  );
+}

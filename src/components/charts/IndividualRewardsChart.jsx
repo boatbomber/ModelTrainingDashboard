@@ -1,0 +1,157 @@
+import { useMemo, useRef } from 'react';
+import { Line } from 'react-chartjs-2';
+import { useDashboard } from '../../context/DashboardContext';
+import {
+  gaussianSmooth,
+  getSmoothedDataLimits,
+  extractRewardFunctions,
+  getRewardDisplayName,
+  hasIndividualRewardData,
+} from '../../utils/dataProcessor';
+import {
+  getBaseChartOptions,
+  createDataset,
+  getRewardColor,
+} from '../../utils/chartConfig';
+import ChartContainer from '../ChartContainer';
+
+export default function IndividualRewardsChart() {
+  const { trainingData, smoothingLevel } = useDashboard();
+  const chartRef = useRef(null);
+
+  const chartData = useMemo(() => {
+    if (!trainingData?.log_history) return null;
+    if (!hasIndividualRewardData(trainingData.log_history)) return null;
+
+    const logHistory = trainingData.log_history;
+    const rewardKeys = extractRewardFunctions(logHistory);
+    if (rewardKeys.length === 0) return null;
+
+    const rewardData = logHistory.filter((entry) =>
+      rewardKeys.some((key) => entry[key] !== undefined)
+    );
+    if (rewardData.length === 0) return null;
+
+    const allSmoothedData = [];
+    const allRawData = [];
+    const datasets = [];
+
+    rewardKeys.forEach((rewardKey, index) => {
+      const stdKey = rewardKey.replace('/mean', '/std');
+      const rawRewardData = rewardData.map((entry) => entry[rewardKey]);
+      const rawStdData = rewardData.map((entry) => entry[stdKey] || 0);
+      const smoothedRewardData = gaussianSmooth(rawRewardData, smoothingLevel);
+      const smoothedStdData = gaussianSmooth(rawStdData, smoothingLevel);
+      const color = getRewardColor(index);
+      const [r, g, b] = color;
+
+      const upperBound = smoothedRewardData.map((val, i) =>
+        val !== null && val !== undefined ? val + smoothedStdData[i] : null
+      );
+      const lowerBound = smoothedRewardData.map((val, i) =>
+        val !== null && val !== undefined ? val - smoothedStdData[i] : null
+      );
+
+      allRawData.push(
+        ...rawRewardData.filter((v) => v !== null && v !== undefined && isFinite(v))
+      );
+      allSmoothedData.push(
+        ...smoothedRewardData.filter(
+          (v) => v !== null && v !== undefined && isFinite(v)
+        ),
+        ...upperBound.filter((v) => v !== null && v !== undefined && isFinite(v)),
+        ...lowerBound.filter((v) => v !== null && v !== undefined && isFinite(v))
+      );
+
+      const displayName = getRewardDisplayName(rewardKey);
+
+      // Envelope datasets
+      datasets.push({
+        label: `${displayName} Upper`,
+        data: upperBound,
+        borderColor: 'transparent',
+        borderWidth: 0,
+        pointRadius: 0,
+        fill: '+1',
+        backgroundColor: `rgba(${r}, ${g}, ${b}, 0.12)`,
+      });
+      datasets.push({
+        label: `${displayName} Lower`,
+        data: lowerBound,
+        borderColor: 'transparent',
+        borderWidth: 0,
+        pointRadius: 0,
+        fill: false,
+      });
+
+      // Line datasets
+      datasets.push(createDataset(displayName, smoothedRewardData, color, true));
+      datasets.push(
+        createDataset(`${displayName} (Raw)`, rawRewardData, color, false)
+      );
+    });
+
+    const labels = rewardData.map((entry) => entry.step);
+
+    return {
+      labels,
+      datasets,
+      allRawData,
+      allSmoothedData,
+    };
+  }, [trainingData, smoothingLevel]);
+
+  const options = useMemo(() => {
+    if (!chartData) return null;
+
+    const opts = getBaseChartOptions();
+    opts.scales.y.title = {
+      display: true,
+      text: 'INDIVIDUAL REWARD',
+      color: 'rgba(255, 255, 255, 0.8)',
+    };
+
+    const yLimits = getSmoothedDataLimits(
+      chartData.allRawData,
+      chartData.allSmoothedData
+    );
+    if (yLimits.min !== undefined && yLimits.max !== undefined) {
+      opts.scales.y.min = yLimits.min;
+      opts.scales.y.max = yLimits.max;
+    }
+
+    opts.plugins.tooltip.callbacks = {
+      label: (context) => {
+        const label = context.dataset.label || '';
+        if (label.includes('Upper') || label.includes('Lower')) return null;
+        const value = context.parsed.y;
+        return value === null || value === undefined
+          ? `${label}: N/A`
+          : `${label}: ${value.toFixed(4)}`;
+      },
+      filter: (tooltipItem) => {
+        const label = tooltipItem.dataset.label || '';
+        return !label.includes('Upper') && !label.includes('Lower');
+      },
+    };
+
+    return opts;
+  }, [chartData]);
+
+  if (!chartData) return null;
+
+  const data = {
+    labels: chartData.labels,
+    datasets: chartData.datasets,
+  };
+
+  return (
+    <ChartContainer
+      title="Individual Reward Functions"
+      chartRef={chartRef}
+      exportFilename="individual-rewards.png"
+    >
+      <Line ref={chartRef} data={data} options={options} />
+    </ChartContainer>
+  );
+}
