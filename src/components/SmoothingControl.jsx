@@ -4,29 +4,58 @@ import { useDashboard } from '../context/DashboardContext';
 export default function SmoothingControl() {
   const { trainingData, smoothingLevel, setSmoothingLevel } = useDashboard();
   const [localValue, setLocalValue] = useState(smoothingLevel);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [inputValue, setInputValue] = useState(Math.round(smoothingLevel * 100).toString());
   const timeoutRef = useRef(null);
 
   useEffect(() => {
     setLocalValue(smoothingLevel);
+    setInputValue(Math.round(smoothingLevel * 100).toString());
   }, [smoothingLevel]);
 
-  const handleChange = useCallback(
-    (e) => {
-      const value = parseFloat(e.target.value);
-      setLocalValue(value);
-      setIsUpdating(true);
-
+  const applyValue = useCallback(
+    (value) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
 
       timeoutRef.current = setTimeout(() => {
         setSmoothingLevel(value);
-        setIsUpdating(false);
       }, 150);
     },
     [setSmoothingLevel]
+  );
+
+  const handleSliderChange = useCallback(
+    (e) => {
+      const value = parseFloat(e.target.value);
+      setLocalValue(value);
+      setInputValue(Math.round(value * 100).toString());
+      applyValue(value);
+    },
+    [applyValue]
+  );
+
+  const handleInputChange = useCallback((e) => {
+    setInputValue(e.target.value);
+  }, []);
+
+  const handleInputBlur = useCallback(() => {
+    let numValue = parseInt(inputValue, 10);
+    if (isNaN(numValue)) numValue = 0;
+    numValue = Math.max(0, Math.min(100, numValue));
+    const normalizedValue = numValue / 100;
+    setLocalValue(normalizedValue);
+    setInputValue(numValue.toString());
+    applyValue(normalizedValue);
+  }, [inputValue, applyValue]);
+
+  const handleInputKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter') {
+        e.target.blur();
+      }
+    },
+    []
   );
 
   useEffect(() => {
@@ -71,7 +100,7 @@ export default function SmoothingControl() {
               max="1"
               step="0.01"
               value={localValue}
-              onChange={handleChange}
+              onChange={handleSliderChange}
               aria-label="Chart smoothing level"
               aria-valuemin={0}
               aria-valuemax={100}
@@ -110,16 +139,21 @@ export default function SmoothingControl() {
           </div>
         </div>
 
-        <div className="bg-cyber-primary/10 border border-cyber-primary/30 text-cyber-primary py-2.5 px-5 rounded-sm font-light min-w-[100px] text-center text-xl font-mono tracking-wider shadow-[0_0_20px_rgba(0,255,255,0.2)]">
-          {percentage}%
+        <div className="relative">
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={inputValue}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            aria-label="Smoothing percentage"
+            className="bg-cyber-primary/10 border border-cyber-primary/30 text-cyber-primary py-2.5 pl-5 pr-8 rounded-sm font-light w-[100px] text-xl font-mono tracking-wider shadow-[0_0_20px_rgba(0,255,255,0.2)] text-right focus:outline-none focus:border-cyber-primary focus:shadow-[0_0_30px_rgba(0,255,255,0.4)]"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-cyber-primary text-xl font-mono pointer-events-none">%</span>
         </div>
       </div>
-
-      {isUpdating && (
-        <span className="ml-2.5 text-cyber-primary text-sm uppercase tracking-wider animate-pulse">
-          Updating...
-        </span>
-      )}
     </div>
   );
 }

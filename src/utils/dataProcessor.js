@@ -2,6 +2,144 @@
  * Data processing utilities for training metrics
  */
 
+const DECIMATION_THRESHOLD = 1000;
+
+/**
+ * Largest-Triangle-Three-Buckets (LTTB) decimation algorithm
+ * Reduces data points while preserving visual shape
+ * @param {number[]} data - Array of y values
+ * @param {number[]} labels - Array of x values (step numbers)
+ * @param {number} threshold - Target number of points
+ * @returns {{ data: number[], labels: number[] }} Decimated data and labels
+ */
+export function decimateLTTB(data, labels, threshold = DECIMATION_THRESHOLD) {
+  if (!data || data.length <= threshold) {
+    return { data, labels };
+  }
+
+  const dataLength = data.length;
+  const sampledData = [];
+  const sampledLabels = [];
+
+  // Always keep the first point
+  sampledData.push(data[0]);
+  sampledLabels.push(labels[0]);
+
+  // Bucket size (excluding first and last points)
+  const bucketSize = (dataLength - 2) / (threshold - 2);
+
+  let prevSelectedIndex = 0;
+
+  for (let i = 0; i < threshold - 2; i++) {
+    // Calculate bucket boundaries
+    const bucketStart = Math.floor((i + 1) * bucketSize) + 1;
+    const bucketEnd = Math.min(Math.floor((i + 2) * bucketSize) + 1, dataLength - 1);
+
+    // Calculate average point of next bucket for triangle area calculation
+    const nextBucketStart = bucketEnd;
+    const nextBucketEnd = Math.min(Math.floor((i + 3) * bucketSize) + 1, dataLength);
+
+    let avgX = 0;
+    let avgY = 0;
+    let avgCount = 0;
+
+    for (let j = nextBucketStart; j < nextBucketEnd; j++) {
+      if (data[j] !== null && data[j] !== undefined && isFinite(data[j])) {
+        avgX += labels[j];
+        avgY += data[j];
+        avgCount++;
+      }
+    }
+
+    if (avgCount > 0) {
+      avgX /= avgCount;
+      avgY /= avgCount;
+    } else {
+      // Fallback to last point if next bucket is empty
+      avgX = labels[dataLength - 1];
+      avgY = data[dataLength - 1];
+    }
+
+    // Find point in current bucket with largest triangle area
+    let maxArea = -1;
+    let selectedIndex = bucketStart;
+
+    const prevX = labels[prevSelectedIndex];
+    const prevY = data[prevSelectedIndex];
+
+    for (let j = bucketStart; j < bucketEnd; j++) {
+      const currY = data[j];
+      if (currY === null || currY === undefined || !isFinite(currY)) {
+        continue;
+      }
+
+      const currX = labels[j];
+
+      // Calculate triangle area using cross product
+      const area = Math.abs(
+        (prevX - avgX) * (currY - prevY) -
+        (prevX - currX) * (avgY - prevY)
+      );
+
+      if (area > maxArea) {
+        maxArea = area;
+        selectedIndex = j;
+      }
+    }
+
+    sampledData.push(data[selectedIndex]);
+    sampledLabels.push(labels[selectedIndex]);
+    prevSelectedIndex = selectedIndex;
+  }
+
+  // Always keep the last point
+  sampledData.push(data[dataLength - 1]);
+  sampledLabels.push(labels[dataLength - 1]);
+
+  return { data: sampledData, labels: sampledLabels };
+}
+
+/**
+ * Decimate multiple data arrays with the same labels
+ * Useful for charts with raw + smoothed + envelope data
+ * @param {Object} datasets - Object with named data arrays
+ * @param {number[]} labels - Array of x values (step numbers)
+ * @param {string} primaryKey - Key of the primary dataset to use for decimation selection
+ * @param {number} threshold - Target number of points
+ * @returns {{ datasets: Object, labels: number[] }} Decimated datasets and labels
+ */
+export function decimateDatasets(datasets, labels, primaryKey, threshold = DECIMATION_THRESHOLD) {
+  if (!labels || labels.length <= threshold) {
+    return { datasets, labels };
+  }
+
+  // Use primary dataset (usually smoothed) to determine which points to keep
+  const primaryData = datasets[primaryKey];
+  if (!primaryData) {
+    return { datasets, labels };
+  }
+
+  // Get indices to keep using LTTB on primary dataset
+  const { labels: sampledLabels } = decimateLTTB(primaryData, labels, threshold);
+  const labelSet = new Set(sampledLabels);
+
+  // Build index map for efficient lookup
+  const indicesToKeep = [];
+  for (let i = 0; i < labels.length; i++) {
+    if (labelSet.has(labels[i])) {
+      indicesToKeep.push(i);
+    }
+  }
+
+  // Apply same indices to all datasets
+  const decimatedDatasets = {};
+  for (const key in datasets) {
+    decimatedDatasets[key] = indicesToKeep.map(i => datasets[key][i]);
+  }
+
+  return { datasets: decimatedDatasets, labels: sampledLabels };
+}
+
 /**
  * Convert smoothing level (0-1) to sigma value for Gaussian smoothing
  */

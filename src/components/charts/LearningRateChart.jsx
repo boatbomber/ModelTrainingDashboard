@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useDashboard } from '../../context/DashboardContext';
+import { decimateLTTB } from '../../utils/dataProcessor';
 import { getBaseChartOptions, createDataset, getEnhancedTooltipCallbacks } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
@@ -19,9 +20,15 @@ export default function LearningRateChart() {
     const learningRates = lrData.map((entry) => entry.learning_rate);
     const labels = lrData.map((entry) => entry.step);
 
-    return {
-      labels,
+    // Apply decimation to reduce rendering load
+    const { data: decimatedLRs, labels: decimatedLabels } = decimateLTTB(
       learningRates,
+      labels
+    );
+
+    return {
+      labels: decimatedLabels,
+      learningRates: decimatedLRs,
     };
   }, [trainingData]);
 

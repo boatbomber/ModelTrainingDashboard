@@ -5,6 +5,7 @@ import {
   gaussianSmooth,
   getSmoothedDataLimits,
   hasKLData,
+  decimateDatasets,
 } from '../../utils/dataProcessor';
 import { getBaseChartOptions, createDataset, getEnhancedTooltipCallbacks } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
@@ -26,10 +27,17 @@ export default function KLChart() {
     const smoothedKLs = gaussianSmooth(rawKLs, smoothingLevel);
     const labels = klData.map((entry) => entry.step);
 
-    return {
+    // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
+    const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
+      { raw: rawKLs, smoothed: smoothedKLs },
       labels,
-      rawKLs,
-      smoothedKLs,
+      'raw'
+    );
+
+    return {
+      labels: decimatedLabels,
+      rawKLs: decimated.raw,
+      smoothedKLs: decimated.smoothed,
     };
   }, [trainingData, smoothingLevel]);
 

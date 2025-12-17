@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useDashboard } from '../../context/DashboardContext';
-import { gaussianSmooth, getSmoothedDataLimits } from '../../utils/dataProcessor';
+import { gaussianSmooth, getSmoothedDataLimits, decimateDatasets } from '../../utils/dataProcessor';
 import { getBaseChartOptions, createDataset, getEnhancedTooltipCallbacks } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
@@ -21,10 +21,17 @@ export default function GradientNormChart() {
     const smoothedGradNorms = gaussianSmooth(rawGradNorms, smoothingLevel);
     const labels = gradData.map((entry) => entry.step);
 
-    return {
+    // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
+    const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
+      { raw: rawGradNorms, smoothed: smoothedGradNorms },
       labels,
-      rawGradNorms,
-      smoothedGradNorms,
+      'raw'
+    );
+
+    return {
+      labels: decimatedLabels,
+      rawGradNorms: decimated.raw,
+      smoothedGradNorms: decimated.smoothed,
     };
   }, [trainingData, smoothingLevel]);
 

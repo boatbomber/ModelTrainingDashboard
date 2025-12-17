@@ -176,11 +176,11 @@ export function getEnhancedTooltipCallbacks(trainingMetadata, chartData) {
 
   return {
     title: (items) => {
-      const step = items[0].parsed.x;
-      return `Step ${step.toLocaleString()}`;
+      const step = items[0].label;
+      return `Step ${Number(step).toLocaleString()}`;
     },
     beforeBody: (items) => {
-      const step = items[0].parsed.x;
+      const step = Number(items[0].label);
       const lines = [];
 
       // Add epoch information if available

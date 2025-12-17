@@ -5,6 +5,7 @@ import {
   gaussianSmooth,
   getSmoothedDataLimits,
   hasRewardData,
+  decimateDatasets,
 } from '../../utils/dataProcessor';
 import {
   getBaseChartOptions,
@@ -36,12 +37,19 @@ export default function RewardChart() {
     const lowerBound = smoothedRewards.map((val, i) => val - smoothedStds[i]);
     const labels = rewardData.map((entry) => entry.step);
 
-    return {
+    // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
+    const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
+      { raw: rawRewards, smoothed: smoothedRewards, upper: upperBound, lower: lowerBound },
       labels,
-      rawRewards,
-      smoothedRewards,
-      upperBound,
-      lowerBound,
+      'raw'
+    );
+
+    return {
+      labels: decimatedLabels,
+      rawRewards: decimated.raw,
+      smoothedRewards: decimated.smoothed,
+      upperBound: decimated.upper,
+      lowerBound: decimated.lower,
     };
   }, [trainingData, smoothingLevel]);
 

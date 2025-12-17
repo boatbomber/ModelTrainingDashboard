@@ -5,6 +5,7 @@ import {
   gaussianSmooth,
   getSmoothedDataLimits,
   hasCompletionLengthData,
+  decimateDatasets,
 } from '../../utils/dataProcessor';
 import {
   getBaseChartOptions,
@@ -45,12 +46,19 @@ export default function CompletionLengthChart() {
 
     const labels = completionData.map((entry) => entry.step);
 
-    return {
+    // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
+    const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
+      { raw: rawLengths, smoothed: smoothedLengths, max: smoothedMaxLengths, min: smoothedMinLengths },
       labels,
-      rawLengths,
-      smoothedLengths,
-      smoothedMaxLengths,
-      smoothedMinLengths,
+      'raw'
+    );
+
+    return {
+      labels: decimatedLabels,
+      rawLengths: decimated.raw,
+      smoothedLengths: decimated.smoothed,
+      smoothedMaxLengths: decimated.max,
+      smoothedMinLengths: decimated.min,
     };
   }, [trainingData, smoothingLevel]);
 

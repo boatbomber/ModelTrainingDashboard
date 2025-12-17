@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useDashboard } from '../../context/DashboardContext';
-import { gaussianSmooth, getSmoothedDataLimits } from '../../utils/dataProcessor';
+import { gaussianSmooth, getSmoothedDataLimits, decimateDatasets } from '../../utils/dataProcessor';
 import { getBaseChartOptions, createDataset, getEnhancedTooltipCallbacks } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
@@ -21,10 +21,17 @@ export default function LossChart() {
     const smoothedLosses = gaussianSmooth(rawLosses, smoothingLevel);
     const labels = lossData.map((entry) => entry.step);
 
-    return {
+    // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
+    const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
+      { raw: rawLosses, smoothed: smoothedLosses },
       labels,
-      rawLosses,
-      smoothedLosses,
+      'raw'
+    );
+
+    return {
+      labels: decimatedLabels,
+      rawLosses: decimated.raw,
+      smoothedLosses: decimated.smoothed,
     };
   }, [trainingData, smoothingLevel]);
 

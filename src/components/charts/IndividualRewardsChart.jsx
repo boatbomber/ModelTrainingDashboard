@@ -7,6 +7,7 @@ import {
   extractRewardFunctions,
   getRewardDisplayName,
   hasIndividualRewardData,
+  decimateLTTB,
 } from '../../utils/dataProcessor';
 import {
   getBaseChartOptions,
@@ -94,9 +95,39 @@ export default function IndividualRewardsChart() {
 
     const labels = rewardData.map((entry) => entry.step);
 
+    // Apply decimation using first raw dataset as reference (so it doesn't change with smoothing)
+    const firstRawData = datasets.find(
+      (ds) => ds.label.includes('Raw')
+    )?.data;
+
+    if (!firstRawData || labels.length <= 1000) {
+      return {
+        labels,
+        datasets,
+        allRawData,
+        allSmoothedData,
+      };
+    }
+
+    // Get decimated indices
+    const { labels: decimatedLabels } = decimateLTTB(firstRawData, labels);
+    const labelSet = new Set(decimatedLabels);
+    const indicesToKeep = [];
+    for (let i = 0; i < labels.length; i++) {
+      if (labelSet.has(labels[i])) {
+        indicesToKeep.push(i);
+      }
+    }
+
+    // Apply decimation to all datasets
+    const decimatedDatasets = datasets.map((ds) => ({
+      ...ds,
+      data: indicesToKeep.map((i) => ds.data[i]),
+    }));
+
     return {
-      labels,
-      datasets,
+      labels: decimatedLabels,
+      datasets: decimatedDatasets,
       allRawData,
       allSmoothedData,
     };

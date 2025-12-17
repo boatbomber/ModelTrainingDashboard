@@ -97,7 +97,7 @@ export default function ChartContainer({
                     className="border-b border-cyber-border/30 hover:bg-cyber-primary/5"
                   >
                     <td className="p-2 text-cyber-muted">{point.step}</td>
-                    <td className="p-2 text-gray-200">{point.value.toFixed(4)}</td>
+                    <td className="p-2 text-gray-200">{point.value?.toFixed(4) ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
