@@ -21,6 +21,15 @@ export default function LossChart() {
     const smoothedLosses = gaussianSmooth(rawLosses, smoothingLevel);
     const labels = lossData.map((entry) => entry.step);
 
+    // Build full-resolution table data using non-decimated series
+    const tableColumns = ['Training Loss'];
+    const tableRows = labels.map((step, index) => ({
+      step,
+      values: {
+        'Training Loss': rawLosses[index],
+      },
+    }));
+
     // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
     const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
       { raw: rawLosses, smoothed: smoothedLosses },
@@ -32,6 +41,8 @@ export default function LossChart() {
       labels: decimatedLabels,
       rawLosses: decimated.raw,
       smoothedLosses: decimated.smoothed,
+      tableColumns,
+      tableRows,
     };
   }, [trainingData, smoothingLevel]);
 
@@ -73,11 +84,11 @@ export default function LossChart() {
     ],
   };
 
-  // Prepare table data for accessibility
-  const tableData = chartData.labels.map((step, index) => ({
-    step,
-    value: chartData.smoothedLosses[index],
-  }));
+  // Prepare table data for accessibility (uses raw, non-decimated series)
+  const tableData = {
+    columns: chartData.tableColumns,
+    rows: chartData.tableRows,
+  };
 
   return (
     <ChartContainer

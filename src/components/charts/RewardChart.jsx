@@ -37,6 +37,15 @@ export default function RewardChart() {
     const lowerBound = smoothedRewards.map((val, i) => val - smoothedStds[i]);
     const labels = rewardData.map((entry) => entry.step);
 
+    // Build full-resolution table data using non-decimated series
+    const tableColumns = ['Overall Reward'];
+    const tableRows = labels.map((step, index) => ({
+      step,
+      values: {
+        'Overall Reward': rawRewards[index],
+      },
+    }));
+
     // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
     const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
       { raw: rawRewards, smoothed: smoothedRewards, upper: upperBound, lower: lowerBound },
@@ -50,6 +59,8 @@ export default function RewardChart() {
       smoothedRewards: decimated.smoothed,
       upperBound: decimated.upper,
       lowerBound: decimated.lower,
+      tableColumns,
+      tableRows,
     };
   }, [trainingData, smoothingLevel]);
 
@@ -100,11 +111,11 @@ export default function RewardChart() {
     ],
   };
 
-  // Prepare table data for accessibility
-  const tableData = chartData.labels.map((step, index) => ({
-    step,
-    value: chartData.smoothedRewards[index],
-  }));
+  // Prepare table data for accessibility (uses raw, non-decimated series)
+  const tableData = {
+    columns: chartData.tableColumns,
+    rows: chartData.tableRows,
+  };
 
   return (
     <ChartContainer

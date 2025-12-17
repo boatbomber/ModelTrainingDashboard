@@ -27,6 +27,15 @@ export default function KLChart() {
     const smoothedKLs = gaussianSmooth(rawKLs, smoothingLevel);
     const labels = klData.map((entry) => entry.step);
 
+    // Build full-resolution table data using non-decimated series
+    const tableColumns = ['KL Divergence'];
+    const tableRows = labels.map((step, index) => ({
+      step,
+      values: {
+        'KL Divergence': rawKLs[index],
+      },
+    }));
+
     // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
     const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
       { raw: rawKLs, smoothed: smoothedKLs },
@@ -38,6 +47,8 @@ export default function KLChart() {
       labels: decimatedLabels,
       rawKLs: decimated.raw,
       smoothedKLs: decimated.smoothed,
+      tableColumns,
+      tableRows,
     };
   }, [trainingData, smoothingLevel]);
 
@@ -76,11 +87,11 @@ export default function KLChart() {
     ],
   };
 
-  // Prepare table data for accessibility
-  const tableData = chartData.labels.map((step, index) => ({
-    step,
-    value: chartData.smoothedKLs[index],
-  }));
+  // Prepare table data for accessibility (uses raw, non-decimated series)
+  const tableData = {
+    columns: chartData.tableColumns,
+    rows: chartData.tableRows,
+  };
 
   return (
     <ChartContainer

@@ -20,6 +20,15 @@ export default function LearningRateChart() {
     const learningRates = lrData.map((entry) => entry.learning_rate);
     const labels = lrData.map((entry) => entry.step);
 
+    // Build full-resolution table data using non-decimated series
+    const tableColumns = ['Learning Rate'];
+    const tableRows = labels.map((step, index) => ({
+      step,
+      values: {
+        'Learning Rate': learningRates[index],
+      },
+    }));
+
     // Apply decimation to reduce rendering load
     const { data: decimatedLRs, labels: decimatedLabels } = decimateLTTB(
       learningRates,
@@ -29,6 +38,8 @@ export default function LearningRateChart() {
     return {
       labels: decimatedLabels,
       learningRates: decimatedLRs,
+      tableColumns,
+      tableRows,
     };
   }, [trainingData]);
 
@@ -74,11 +85,11 @@ export default function LearningRateChart() {
     ],
   };
 
-  // Prepare table data for accessibility
-  const tableData = chartData.labels.map((step, index) => ({
-    step,
-    value: chartData.learningRates[index],
-  }));
+  // Prepare table data for accessibility (uses raw, non-decimated series)
+  const tableData = {
+    columns: chartData.tableColumns,
+    rows: chartData.tableRows,
+  };
 
   return (
     <ChartContainer

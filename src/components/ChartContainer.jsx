@@ -77,7 +77,7 @@ export default function ChartContainer({
       </div>
 
       {/* Data table alternative for screen readers */}
-      {tableData && tableData.length > 0 && (
+      {tableData && tableData.rows && tableData.rows.length > 0 && (
         <details className="mt-4">
           <summary className="text-cyber-muted text-sm cursor-pointer hover:text-cyber-primary transition-colors">
             View {title} data as table
@@ -87,17 +87,37 @@ export default function ChartContainer({
               <thead>
                 <tr className="border-b border-cyber-border">
                   <th className="text-left text-cyber-primary p-2">Step</th>
-                  <th className="text-left text-cyber-primary p-2">Value</th>
+                  {tableData.columns?.map((column) => (
+                    <th
+                      key={column}
+                      className="text-left text-cyber-primary p-2"
+                    >
+                      {column}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {tableData.map((point, index) => (
+                {tableData.rows.map((row, index) => (
                   <tr
                     key={index}
                     className="border-b border-cyber-border/30 hover:bg-cyber-primary/5"
                   >
-                    <td className="p-2 text-cyber-muted">{point.step}</td>
-                    <td className="p-2 text-gray-200">{point.value?.toFixed(4) ?? '—'}</td>
+                    <td className="p-2 text-cyber-muted">{row.step}</td>
+                    {tableData.columns?.map((column) => {
+                      const value = row.values?.[column];
+                      const isNumber =
+                        typeof value === 'number' && Number.isFinite(value);
+                      return (
+                        <td key={column} className="p-2 text-gray-200">
+                          {value == null
+                            ? '—'
+                            : isNumber
+                            ? value.toFixed(4)
+                            : String(value)}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>

@@ -21,6 +21,15 @@ export default function GradientNormChart() {
     const smoothedGradNorms = gaussianSmooth(rawGradNorms, smoothingLevel);
     const labels = gradData.map((entry) => entry.step);
 
+    // Build full-resolution table data using non-decimated series
+    const tableColumns = ['Gradient Norm'];
+    const tableRows = labels.map((step, index) => ({
+      step,
+      values: {
+        'Gradient Norm': smoothedGradNorms[index],
+      },
+    }));
+
     // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
     const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
       { raw: rawGradNorms, smoothed: smoothedGradNorms },
@@ -32,6 +41,8 @@ export default function GradientNormChart() {
       labels: decimatedLabels,
       rawGradNorms: decimated.raw,
       smoothedGradNorms: decimated.smoothed,
+      tableColumns,
+      tableRows,
     };
   }, [trainingData, smoothingLevel]);
 
@@ -83,11 +94,11 @@ export default function GradientNormChart() {
     ],
   };
 
-  // Prepare table data for accessibility
-  const tableData = chartData.labels.map((step, index) => ({
-    step,
-    value: chartData.smoothedGradNorms[index],
-  }));
+  // Prepare table data for accessibility (uses raw, non-decimated series)
+  const tableData = {
+    columns: chartData.tableColumns,
+    rows: chartData.tableRows,
+  };
 
   return (
     <ChartContainer

@@ -37,6 +37,8 @@ export default function IndividualRewardsChart() {
     const allSmoothedData = [];
     const allRawData = [];
     const datasets = [];
+    const tableColumns = [];
+    const tableSeries = {};
 
     rewardKeys.forEach((rewardKey, index) => {
       const stdKey = rewardKey.replace('/mean', '/std');
@@ -91,9 +93,22 @@ export default function IndividualRewardsChart() {
       datasets.push(
         createDataset(`${displayName} (Raw)`, rawRewardData, color, false)
       );
+
+      // Table series (use non-decimated series)
+      tableColumns.push(displayName);
+      tableSeries[displayName] = rawRewardData;
     });
 
     const labels = rewardData.map((entry) => entry.step);
+
+    // Build full-resolution table rows using non-decimated series
+    const tableRows = labels.map((step, index) => {
+      const values = {};
+      tableColumns.forEach((column) => {
+        values[column] = tableSeries[column]?.[index];
+      });
+      return { step, values };
+    });
 
     // Apply decimation using first raw dataset as reference (so it doesn't change with smoothing)
     const firstRawData = datasets.find(
@@ -106,6 +121,8 @@ export default function IndividualRewardsChart() {
         datasets,
         allRawData,
         allSmoothedData,
+        tableColumns,
+        tableRows,
       };
     }
 
@@ -130,6 +147,8 @@ export default function IndividualRewardsChart() {
       datasets: decimatedDatasets,
       allRawData,
       allSmoothedData,
+      tableColumns,
+      tableRows,
     };
   }, [trainingData, smoothingLevel]);
 
@@ -168,16 +187,11 @@ export default function IndividualRewardsChart() {
     datasets: chartData.datasets,
   };
 
-  // Prepare table data for accessibility - use first smoothed reward dataset
-  const firstSmoothedDataset = chartData.datasets.find(
-    (ds) => !ds.label.includes('Raw') && !ds.label.includes('Upper') && !ds.label.includes('Lower')
-  );
-  const tableData = firstSmoothedDataset
-    ? chartData.labels.map((step, index) => ({
-        step,
-        value: firstSmoothedDataset.data[index] ?? 0,
-      }))
-    : [];
+  // Prepare table data for accessibility (uses raw, non-decimated series)
+  const tableData = {
+    columns: chartData.tableColumns,
+    rows: chartData.tableRows,
+  };
 
   return (
     <ChartContainer

@@ -46,6 +46,15 @@ export default function CompletionLengthChart() {
 
     const labels = completionData.map((entry) => entry.step);
 
+    // Build full-resolution table data using non-decimated series
+    const tableColumns = ['Completion Length'];
+    const tableRows = labels.map((step, index) => ({
+      step,
+      values: {
+        'Completion Length': rawLengths[index],
+      },
+    }));
+
     // Apply decimation to reduce rendering load (use raw data as reference so it doesn't change with smoothing)
     const { datasets: decimated, labels: decimatedLabels } = decimateDatasets(
       { raw: rawLengths, smoothed: smoothedLengths, max: smoothedMaxLengths, min: smoothedMinLengths },
@@ -59,6 +68,8 @@ export default function CompletionLengthChart() {
       smoothedLengths: decimated.smoothed,
       smoothedMaxLengths: decimated.max,
       smoothedMinLengths: decimated.min,
+      tableColumns,
+      tableRows,
     };
   }, [trainingData, smoothingLevel]);
 
@@ -119,11 +130,11 @@ export default function CompletionLengthChart() {
     ],
   };
 
-  // Prepare table data for accessibility
-  const tableData = chartData.labels.map((step, index) => ({
-    step,
-    value: chartData.smoothedLengths[index],
-  }));
+  // Prepare table data for accessibility (uses raw, non-decimated series)
+  const tableData = {
+    columns: chartData.tableColumns,
+    rows: chartData.tableRows,
+  };
 
   return (
     <ChartContainer
