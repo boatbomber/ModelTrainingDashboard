@@ -10,7 +10,7 @@ export default function Header() {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-primary/80 to-transparent" />
 
       <h1 className="text-cyber-primary text-4xl font-light mb-6 tracking-wider uppercase drop-shadow-[0_0_20px_rgba(0,255,255,0.5)]">
-        AI Training Monitor
+        Model Training Dashboard
       </h1>
 
       {fileName && (
