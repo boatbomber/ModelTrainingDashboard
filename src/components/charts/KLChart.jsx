@@ -6,11 +6,11 @@ import {
   getSmoothedDataLimits,
   hasKLData,
 } from '../../utils/dataProcessor';
-import { getBaseChartOptions, createDataset } from '../../utils/chartConfig';
+import { getBaseChartOptions, createDataset, getEnhancedTooltipCallbacks } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
 export default function KLChart() {
-  const { trainingData, smoothingLevel } = useDashboard();
+  const { trainingData, trainingMetadata, smoothingLevel } = useDashboard();
   const chartRef = useRef(null);
 
   const chartData = useMemo(() => {
@@ -49,12 +49,14 @@ export default function KLChart() {
       opts.scales.y.max = yLimits.max;
     }
 
-    opts.plugins.tooltip.callbacks = {
-      label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(4)}`,
-    };
+    // Use enhanced tooltips
+    opts.plugins.tooltip.callbacks = getEnhancedTooltipCallbacks(
+      trainingMetadata,
+      chartData
+    );
 
     return opts;
-  }, [chartData]);
+  }, [chartData, trainingMetadata]);
 
   if (!chartData) return null;
 

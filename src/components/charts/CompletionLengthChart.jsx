@@ -10,11 +10,12 @@ import {
   getBaseChartOptions,
   createDataset,
   createEnvelopeDatasets,
+  getEnhancedTooltipCallbacks,
 } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
 export default function CompletionLengthChart() {
-  const { trainingData, smoothingLevel } = useDashboard();
+  const { trainingData, trainingMetadata, smoothingLevel } = useDashboard();
   const chartRef = useRef(null);
 
   const chartData = useMemo(() => {
@@ -74,20 +75,14 @@ export default function CompletionLengthChart() {
       opts.scales.y.max = yLimits.max;
     }
 
-    opts.plugins.tooltip.callbacks = {
-      label: (context) => {
-        const label = context.dataset.label || '';
-        if (label.includes('Upper') || label.includes('Lower')) return null;
-        return `${label}: ${Math.round(context.parsed.y)} tokens`;
-      },
-      filter: (tooltipItem) => {
-        const label = tooltipItem.dataset.label || '';
-        return !label.includes('Upper') && !label.includes('Lower');
-      },
-    };
+    // Use enhanced tooltips
+    opts.plugins.tooltip.callbacks = getEnhancedTooltipCallbacks(
+      trainingMetadata,
+      chartData
+    );
 
     return opts;
-  }, [chartData]);
+  }, [chartData, trainingMetadata]);
 
   if (!chartData) return null;
 

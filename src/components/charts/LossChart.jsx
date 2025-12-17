@@ -2,11 +2,11 @@ import { useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useDashboard } from '../../context/DashboardContext';
 import { gaussianSmooth, getSmoothedDataLimits } from '../../utils/dataProcessor';
-import { getBaseChartOptions, createDataset } from '../../utils/chartConfig';
+import { getBaseChartOptions, createDataset, getEnhancedTooltipCallbacks } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
 export default function LossChart() {
-  const { trainingData, smoothingLevel } = useDashboard();
+  const { trainingData, trainingMetadata, smoothingLevel } = useDashboard();
   const chartRef = useRef(null);
 
   const chartData = useMemo(() => {
@@ -47,12 +47,14 @@ export default function LossChart() {
       opts.scales.y.max = yLimits.max;
     }
 
-    opts.plugins.tooltip.callbacks = {
-      label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(4)}`,
-    };
+    // Use enhanced tooltips
+    opts.plugins.tooltip.callbacks = getEnhancedTooltipCallbacks(
+      trainingMetadata,
+      chartData
+    );
 
     return opts;
-  }, [chartData]);
+  }, [chartData, trainingMetadata]);
 
   if (!chartData) return null;
 

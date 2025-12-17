@@ -10,6 +10,11 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
+import {
+  formatValue,
+  calculateProgress,
+  calculateChange,
+} from './formatters';
 
 // Register Chart.js components
 ChartJS.register(
@@ -98,6 +103,82 @@ export function getBaseChartOptions() {
         titleColor: '#00ffff',
         bodyColor: 'rgba(255, 255, 255, 0.8)',
       },
+    },
+  };
+}
+
+/**
+ * Create enhanced tooltip callbacks with epoch, progress, and change information
+ * @param {object} trainingMetadata - Metadata about the training run
+ * @param {object} chartData - Chart data containing raw values for change calculation
+ * @returns {object} - Tooltip callbacks configuration
+ */
+export function getEnhancedTooltipCallbacks(trainingMetadata, chartData) {
+  const { totalSteps } = trainingMetadata || {};
+
+  return {
+    title: (items) => {
+      const step = items[0].parsed.x;
+      return `Step ${step.toLocaleString()}`;
+    },
+    beforeBody: (items) => {
+      const step = items[0].parsed.x;
+      const lines = [];
+
+      // Add epoch information if available
+      if (totalSteps > 0) {
+        // Show progress even without epoch info
+        const progress = calculateProgress(step, totalSteps);
+        if (progress !== null) {
+          lines.push(`${progress}% complete`);
+        }
+      }
+
+      return lines.length > 0 ? lines : null;
+    },
+    label: (item) => {
+      const value = item.parsed.y;
+      const label = item.dataset.label || '';
+
+      // Skip upper/lower bounds in tooltips
+      if (label.includes('Upper') || label.includes('Lower')) {
+        return null;
+      }
+
+      const formatted = formatValue(value, label);
+      return `${label}: ${formatted}`;
+    },
+    afterBody: (items) => {
+      const lines = [];
+
+      // Show change for smoothed data only (not raw)
+      for (const item of items) {
+        const label = item.dataset.label || '';
+
+        // Only show change for smoothed (non-raw) data
+        if (label.includes('Raw') || label.includes('Upper') || label.includes('Lower')) {
+          continue;
+        }
+
+        const currentIdx = item.dataIndex;
+        if (currentIdx > 0 && item.dataset.data && item.dataset.data.length > currentIdx) {
+          const current = item.parsed.y;
+          const previousDataPoint = item.dataset.data[currentIdx - 1];
+          const previous = typeof previousDataPoint === 'object' ? previousDataPoint.y : previousDataPoint;
+
+          if (previous !== undefined && previous !== null && !isNaN(previous)) {
+            const change = calculateChange(current, previous);
+            lines.push(`Change: ${change}`);
+          }
+        }
+      }
+
+      return lines.length == 1 ? lines : null;
+    },
+    filter: (tooltipItem) => {
+      // Filter out upper/lower bounds from tooltip
+      const label = tooltipItem.dataset.label || '';
+      return !label.includes('Upper') && !label.includes('Lower');
     },
   };
 }

@@ -12,11 +12,12 @@ import {
   getBaseChartOptions,
   createDataset,
   getRewardColor,
+  getEnhancedTooltipCallbacks,
 } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
 export default function IndividualRewardsChart() {
-  const { trainingData, smoothingLevel } = useDashboard();
+  const { trainingData, trainingMetadata, smoothingLevel } = useDashboard();
   const chartRef = useRef(null);
 
   const chartData = useMemo(() => {
@@ -120,23 +121,14 @@ export default function IndividualRewardsChart() {
       opts.scales.y.max = yLimits.max;
     }
 
-    opts.plugins.tooltip.callbacks = {
-      label: (context) => {
-        const label = context.dataset.label || '';
-        if (label.includes('Upper') || label.includes('Lower')) return null;
-        const value = context.parsed.y;
-        return value === null || value === undefined
-          ? `${label}: N/A`
-          : `${label}: ${value.toFixed(4)}`;
-      },
-      filter: (tooltipItem) => {
-        const label = tooltipItem.dataset.label || '';
-        return !label.includes('Upper') && !label.includes('Lower');
-      },
-    };
+    // Use enhanced tooltips
+    opts.plugins.tooltip.callbacks = getEnhancedTooltipCallbacks(
+      trainingMetadata,
+      chartData
+    );
 
     return opts;
-  }, [chartData]);
+  }, [chartData, trainingMetadata]);
 
   if (!chartData) return null;
 

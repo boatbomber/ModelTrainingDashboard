@@ -1,11 +1,11 @@
 import { useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useDashboard } from '../../context/DashboardContext';
-import { getBaseChartOptions, createDataset } from '../../utils/chartConfig';
+import { getBaseChartOptions, createDataset, getEnhancedTooltipCallbacks } from '../../utils/chartConfig';
 import ChartContainer from '../ChartContainer';
 
 export default function LearningRateChart() {
-  const { trainingData } = useDashboard();
+  const { trainingData, trainingMetadata } = useDashboard();
   const chartRef = useRef(null);
 
   const chartData = useMemo(() => {
@@ -49,18 +49,14 @@ export default function LearningRateChart() {
       autoSkipPadding: 10,
     };
 
-    opts.plugins.tooltip.callbacks = {
-      label: (context) => {
-        const value = context.parsed.y;
-        if (value === 0) return 'LR: 0';
-        if (value >= 0.01) return `LR: ${value.toFixed(4)}`;
-        if (value >= 0.0001) return `LR: ${value.toFixed(6)}`;
-        return `LR: ${value.toExponential(2)}`;
-      },
-    };
+    // Use enhanced tooltips
+    opts.plugins.tooltip.callbacks = getEnhancedTooltipCallbacks(
+      trainingMetadata,
+      chartData
+    );
 
     return opts;
-  }, [chartData]);
+  }, [chartData, trainingMetadata]);
 
   if (!chartData) return null;
 

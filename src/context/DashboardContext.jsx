@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { getSavedSmoothingLevel, saveSmoothingLevel } from '../utils/storage';
 
 const DashboardContext = createContext(null);
@@ -47,8 +47,27 @@ export function DashboardProvider({ children }) {
     saveSmoothingLevel(level);
   }, []);
 
+  // Compute training metadata
+  const trainingMetadata = useMemo(() => {
+    if (!trainingData) {
+      return {
+        totalSteps: 0,
+        totalEpochs: null,
+      };
+    }
+
+    const totalEpochs = trainingData.num_train_epochs || null;
+    const totalSteps = trainingData.max_steps || 0;
+
+    return {
+      totalSteps,
+      totalEpochs,
+    };
+  }, [trainingData]);
+
   const value = {
     trainingData,
+    trainingMetadata,
     smoothingLevel,
     setSmoothingLevel,
     isLoading,
