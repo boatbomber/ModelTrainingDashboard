@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useDashboard } from './context/DashboardContext';
+import { hasRewardData } from './utils/dataProcessor';
 import Header from './components/Header';
 import ProgressBar from './components/ProgressBar';
 import StatsGrid from './components/StatsGrid';
@@ -15,6 +16,10 @@ import GradientNormChart from './components/charts/GradientNormChart';
 
 function Dashboard() {
   const { trainingData, isLoading, fileName, error } = useDashboard();
+
+  const hasRewards = useMemo(() => {
+    return trainingData?.log_history && hasRewardData(trainingData.log_history);
+  }, [trainingData]);
 
   // Focus management: move focus to progress section after data loads
   useEffect(() => {
@@ -57,23 +62,32 @@ function Dashboard() {
       <InsightsPanel />
       <SmoothingControl />
 
-      {/* Two-column chart layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <RewardChart />
-        <IndividualRewardsChart />
+      {/* Responsive chart grid - adapts to any number of charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        {hasRewards ? (
+          <>
+            <div className="xl:col-span-2">
+              <RewardChart />
+            </div>
+            <IndividualRewardsChart />
+            <CompletionLengthChart />
+            <KLChart />
+            <GradientNormChart />
+            <LearningRateChart />
+            <LossChart />
+          </>
+        ) : (
+          <>
+            <div className="xl:col-span-2">
+              <LossChart />
+            </div>
+            <CompletionLengthChart />
+            <KLChart />
+            <GradientNormChart />
+            <LearningRateChart />
+          </>
+        )}
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <LossChart />
-        <KLChart />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <LearningRateChart />
-        <GradientNormChart />
-      </div>
-
-      <CompletionLengthChart />
     </main>
   );
 }
