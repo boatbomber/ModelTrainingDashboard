@@ -169,16 +169,11 @@ export function generateTrainingInsights(data, advancedStats) {
     }
   }
 
-  // Training duration insight
-  if (data.log_history && data.log_history.length > 0) {
-    const totalEntries = data.log_history.length;
+  // Training duration insight - only warn if dataset is small
+  if (data.log_history && data.log_history.length > 0 && data.log_history.length <= 1000) {
     insights.push({
       type: 'info',
-      message: `Training log contains ${totalEntries.toLocaleString()} data points - ${
-        totalEntries > 1000
-          ? 'Rich dataset for analysis'
-          : 'Consider longer training for better insights'
-      }.`,
+      message: `Training log contains ${data.log_history.length.toLocaleString()} data points - Consider longer training for better insights.`,
     });
   }
 
