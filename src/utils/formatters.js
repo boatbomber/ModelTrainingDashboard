@@ -5,23 +5,11 @@
  * @returns {string} - Formatted value
  */
 export function formatValue(value, metricType) {
-  if (metricType.includes('Loss')) {
-    return value.toFixed(4);
-  }
   if (metricType.includes('Learning Rate')) {
     return value.toExponential(2);
   }
-  if (metricType.includes('Reward')) {
-    return value.toFixed(3);
-  }
-  if (metricType.includes('Length')) {
+  if (metricType.includes('Completion Length')) {
     return Math.round(value).toLocaleString();
-  }
-  if (metricType.includes('KL')) {
-    return value.toFixed(4);
-  }
-  if (metricType.includes('Gradient')) {
-    return value.toFixed(4);
   }
   return value.toPrecision(4);
 }
