@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useCallback } from 'react';
+import { getSavedSmoothingLevel, saveSmoothingLevel } from '../utils/storage';
 
 const DashboardContext = createContext(null);
 
 export function DashboardProvider({ children }) {
   const [trainingData, setTrainingData] = useState(null);
-  const [smoothingLevel, setSmoothingLevel] = useState(0.5);
+  const [smoothingLevel, setSmoothingLevelState] = useState(getSavedSmoothingLevel());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fileName, setFileName] = useState(null);
@@ -39,6 +40,11 @@ export function DashboardProvider({ children }) {
 
   const clearError = useCallback(() => {
     setError(null);
+  }, []);
+
+  const setSmoothingLevel = useCallback((level) => {
+    setSmoothingLevelState(level);
+    saveSmoothingLevel(level);
   }, []);
 
   const value = {
