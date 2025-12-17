@@ -28,7 +28,7 @@ function calculateStats(arr) {
  */
 function calculateImprovement(arr) {
   if (arr.length < 2) return null;
-  const windowSize = Math.min(10, Math.floor(arr.length / 4));
+  const windowSize = Math.min(500, Math.floor(arr.length * 0.05));
   if (windowSize < 1) return null;
 
   const start =
