@@ -71,11 +71,19 @@ export default function LearningRateChart() {
     ],
   };
 
+  // Prepare table data for accessibility
+  const tableData = chartData.labels.map((step, index) => ({
+    step,
+    value: chartData.learningRates[index],
+  }));
+
   return (
     <ChartContainer
       title="Learning Rate Schedule"
       chartRef={chartRef}
       exportFilename="learning-rate.png"
+      tableData={tableData}
+      dataDescription="learning rate over training steps"
     >
       <Line ref={chartRef} data={data} options={options} />
     </ChartContainer>

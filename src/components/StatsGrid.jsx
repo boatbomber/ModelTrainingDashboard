@@ -7,12 +7,18 @@ function StatCard({ label, value, isPositiveGood, isNeutral }) {
   const isPositive = value > 0;
 
   let colorClass;
+  let srStatus; // Screen reader status text
+
   if (isNeutral) {
-    colorClass = Math.abs(value) < 10 ? 'text-cyber-success' : 'text-cyber-warning';
+    const isStable = Math.abs(value) < 10;
+    colorClass = isStable ? 'text-cyber-success' : 'text-cyber-warning';
+    srStatus = isStable ? '(stable)' : '(moderate change)';
   } else if (isPositiveGood) {
     colorClass = isPositive ? 'text-cyber-success' : 'text-cyber-error';
+    srStatus = isPositive ? '(improved)' : '(decreased)';
   } else {
     colorClass = isPositive ? 'text-cyber-error' : 'text-cyber-success';
+    srStatus = isPositive ? '(increased)' : '(improved)';
   }
 
   return (
@@ -25,6 +31,7 @@ function StatCard({ label, value, isPositiveGood, isNeutral }) {
       </div>
       <div className={`text-3xl font-extralight font-mono ${colorClass}`}>
         {formattedValue}%
+        <span className="sr-only"> {srStatus}</span>
       </div>
     </div>
   );

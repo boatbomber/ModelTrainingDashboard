@@ -112,6 +112,16 @@ export default function DropZone() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+      aria-label="Upload training state JSON file"
+      aria-describedby="dropzone-description"
     >
       <input
         ref={fileInputRef}
@@ -122,8 +132,8 @@ export default function DropZone() {
       />
 
       <div className="text-center">
-        <div className="text-4xl mb-3">{getIcon()}</div>
-        <p className="text-cyber-muted font-mono text-sm">
+        <div className="text-4xl mb-3" aria-hidden="true">{getIcon()}</div>
+        <p id="dropzone-description" className="text-cyber-muted font-mono text-sm">
           {getMessage()}
         </p>
       </div>

@@ -97,11 +97,19 @@ export default function RewardChart() {
     ],
   };
 
+  // Prepare table data for accessibility
+  const tableData = chartData.labels.map((step, index) => ({
+    step,
+    value: chartData.smoothedRewards[index],
+  }));
+
   return (
     <ChartContainer
       title="Overall Reward"
       chartRef={chartRef}
       exportFilename="overall-reward.png"
+      tableData={tableData}
+      dataDescription="overall reward over time with standard deviation"
     >
       <Line ref={chartRef} data={data} options={options} />
     </ChartContainer>

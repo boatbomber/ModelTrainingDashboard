@@ -21,6 +21,14 @@ const typeIcons = {
   info: '\u2139',
 };
 
+const typeLabels = {
+  success: 'Success',
+  good: 'Good',
+  warning: 'Warning',
+  error: 'Issue',
+  info: 'Info',
+};
+
 export default function InsightsPanel() {
   const { trainingData } = useDashboard();
 
@@ -45,7 +53,8 @@ export default function InsightsPanel() {
         {insights.map((insight, index) => (
           <li key={index} className="mb-2">
             <span className={typeStyles[insight.type]}>
-              {typeIcons[insight.type]}{' '}
+              <span aria-hidden="true">{typeIcons[insight.type]}</span>
+              <span className="sr-only">{typeLabels[insight.type]}:</span>{' '}
             </span>
             <span className={typeStyles[insight.type]}>
               {insight.message.split(' - ')[0]}

@@ -74,11 +74,19 @@ export default function GradientNormChart() {
     ],
   };
 
+  // Prepare table data for accessibility
+  const tableData = chartData.labels.map((step, index) => ({
+    step,
+    value: chartData.smoothedGradNorms[index],
+  }));
+
   return (
     <ChartContainer
       title="Gradient Magnitude"
       chartRef={chartRef}
       exportFilename="gradient-norm.png"
+      tableData={tableData}
+      dataDescription="gradient norm over training steps"
     >
       <Line ref={chartRef} data={data} options={options} />
     </ChartContainer>

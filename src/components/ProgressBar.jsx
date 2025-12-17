@@ -14,7 +14,11 @@ export default function ProgressBar() {
   } of ${trainingData.max_steps?.toLocaleString() || 0}`;
 
   return (
-    <div className="relative overflow-hidden rounded-sm bg-cyber-bg/80 backdrop-blur-xl border border-cyber-border p-6 mb-5 shadow-cyber">
+    <div
+      id="progress-section"
+      tabIndex={-1}
+      className="relative overflow-hidden rounded-sm bg-cyber-bg/80 backdrop-blur-xl border border-cyber-border p-6 mb-5 shadow-cyber focus:outline-none"
+    >
       {/* Top gradient line */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-primary/30 to-transparent" />
 
@@ -22,7 +26,14 @@ export default function ProgressBar() {
         Training Progress
       </h2>
 
-      <div className="relative h-8 bg-black/50 border border-cyber-border rounded-sm overflow-hidden mb-2">
+      <div
+        role="progressbar"
+        aria-valuenow={Math.round(progress)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Training progress: ${progress.toFixed(1)}% complete. ${epochInfo}. ${stepInfo}.`}
+        className="relative h-8 bg-black/50 border border-cyber-border rounded-sm overflow-hidden mb-2"
+      >
         {/* Grid pattern overlay */}
         <div
           className="absolute inset-0 pointer-events-none"

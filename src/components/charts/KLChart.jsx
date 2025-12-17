@@ -66,11 +66,19 @@ export default function KLChart() {
     ],
   };
 
+  // Prepare table data for accessibility
+  const tableData = chartData.labels.map((step, index) => ({
+    step,
+    value: chartData.smoothedKLs[index],
+  }));
+
   return (
     <ChartContainer
       title="KL Divergence"
       chartRef={chartRef}
       exportFilename="kl-divergence.png"
+      tableData={tableData}
+      dataDescription="KL divergence over training steps"
     >
       <Line ref={chartRef} data={data} options={options} />
     </ChartContainer>

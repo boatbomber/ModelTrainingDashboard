@@ -64,11 +64,19 @@ export default function LossChart() {
     ],
   };
 
+  // Prepare table data for accessibility
+  const tableData = chartData.labels.map((step, index) => ({
+    step,
+    value: chartData.smoothedLosses[index],
+  }));
+
   return (
     <ChartContainer
       title="Loss Trajectory"
       chartRef={chartRef}
       exportFilename="loss-trajectory.png"
+      tableData={tableData}
+      dataDescription="training loss over time"
     >
       <Line ref={chartRef} data={data} options={options} />
     </ChartContainer>

@@ -116,11 +116,19 @@ export default function CompletionLengthChart() {
     ],
   };
 
+  // Prepare table data for accessibility
+  const tableData = chartData.labels.map((step, index) => ({
+    step,
+    value: chartData.smoothedLengths[index],
+  }));
+
   return (
     <ChartContainer
       title="Completion Length"
       chartRef={chartRef}
       exportFilename="completion-length.png"
+      tableData={tableData}
+      dataDescription="completion length over time with min/max range"
     >
       <Line ref={chartRef} data={data} options={options} />
     </ChartContainer>

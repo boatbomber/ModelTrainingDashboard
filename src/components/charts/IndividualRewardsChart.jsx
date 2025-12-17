@@ -145,11 +145,24 @@ export default function IndividualRewardsChart() {
     datasets: chartData.datasets,
   };
 
+  // Prepare table data for accessibility - use first smoothed reward dataset
+  const firstSmoothedDataset = chartData.datasets.find(
+    (ds) => !ds.label.includes('Raw') && !ds.label.includes('Upper') && !ds.label.includes('Lower')
+  );
+  const tableData = firstSmoothedDataset
+    ? chartData.labels.map((step, index) => ({
+        step,
+        value: firstSmoothedDataset.data[index] ?? 0,
+      }))
+    : [];
+
   return (
     <ChartContainer
       title="Individual Reward Functions"
       chartRef={chartRef}
       exportFilename="individual-rewards.png"
+      tableData={tableData}
+      dataDescription="individual reward functions over time"
     >
       <Line ref={chartRef} data={data} options={options} />
     </ChartContainer>

@@ -72,6 +72,11 @@ export default function SmoothingControl() {
               step="0.01"
               value={localValue}
               onChange={handleChange}
+              aria-label="Chart smoothing level"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percentage}
+              aria-valuetext={`${percentage}% smoothing - ${getDescription()}`}
               className="w-full h-1 bg-cyber-primary/10 rounded-none appearance-none cursor-pointer
                 [&::-webkit-slider-thumb]:appearance-none
                 [&::-webkit-slider-thumb]:w-4
