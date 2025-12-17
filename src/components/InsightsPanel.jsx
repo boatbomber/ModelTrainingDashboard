@@ -5,20 +5,12 @@ import {
   generateTrainingInsights,
 } from '../utils/statsCalculator';
 
-const typeStyles = {
-  success: 'text-cyber-success',
-  good: 'text-green-400',
-  warning: 'text-cyber-warning',
-  error: 'text-cyber-error',
-  info: 'text-blue-400',
-};
-
-const typeIcons = {
-  success: '\u2713',
-  good: '\u2713',
-  warning: '\u26A0',
-  error: '\u26A0',
-  info: '\u2139',
+const pillStyles = {
+  success: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
+  good: 'bg-green-500/15 border-green-500/30 text-green-400',
+  warning: 'bg-amber-500/15 border-amber-500/30 text-amber-400',
+  error: 'bg-red-500/15 border-red-500/30 text-red-400',
+  info: 'bg-blue-500/15 border-blue-500/30 text-blue-400',
 };
 
 const typeLabels = {
@@ -41,33 +33,26 @@ export default function InsightsPanel() {
   if (!trainingData || insights.length === 0) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-sm bg-cyber-bg/80 backdrop-blur-xl border border-cyber-border p-6 mb-5 shadow-cyber">
+    <div className="relative overflow-hidden rounded-sm bg-cyber-bg/80 backdrop-blur-xl border border-cyber-border p-4 mb-5 shadow-cyber">
       {/* Top gradient line */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-primary/30 to-transparent" />
 
-      <h2 className="text-cyber-primary text-xl font-light mb-5 uppercase tracking-wider">
-        Training Insights
-      </h2>
-
-      <ul className="m-0 pl-5 text-gray-200 leading-relaxed">
+      <div className="flex flex-wrap gap-2">
         {insights.map((insight, index) => (
-          <li key={index} className="mb-2">
-            <span className={typeStyles[insight.type]}>
-              <span aria-hidden="true">{typeIcons[insight.type]}</span>
-              <span className="sr-only">{typeLabels[insight.type]}:</span>{' '}
-            </span>
-            <span className={typeStyles[insight.type]}>
-              {insight.message.split(' - ')[0]}
-            </span>
+          <div
+            key={index}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${pillStyles[insight.type]}`}
+          >
+            <span className="sr-only">{typeLabels[insight.type]}:</span>
+            <span>{insight.message.split(' - ')[0]}</span>
             {insight.message.includes(' - ') && (
-              <span className="text-gray-400">
-                {' - '}
+              <span className="opacity-60 text-xs hidden sm:inline">
                 {insight.message.split(' - ')[1]}
               </span>
             )}
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

@@ -105,7 +105,7 @@ export default function DropZone() {
 
   return (
     <div
-      className={`relative border-2 rounded-sm p-8 transition-all duration-200 cursor-pointer ${getBorderClass()} ${
+      className={`relative border-2 rounded-sm p-4 transition-all duration-200 cursor-pointer ${getBorderClass()} ${
         dragState === 'default' ? 'hover:border-cyber-primary/40 hover:bg-cyber-primary/5' : ''
       }`}
       onDragOver={handleDragOver}
@@ -131,9 +131,9 @@ export default function DropZone() {
         className="hidden"
       />
 
-      <div className="text-center">
-        <div className="text-4xl mb-3" aria-hidden="true">{getIcon()}</div>
-        <p id="dropzone-description" className="text-cyber-muted font-mono text-sm">
+      <div className="flex items-center gap-3">
+        <div className="text-2xl flex-shrink-0" aria-hidden="true">{getIcon()}</div>
+        <p id="dropzone-description" className="text-cyber-muted font-mono text-xs">
           {getMessage()}
         </p>
       </div>
