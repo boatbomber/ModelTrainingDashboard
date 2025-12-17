@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { exportChartAsPNG } from '../utils/chartConfig';
+import { useCallback, useState } from 'react';
+import { exportChartAsPNG, resetChartZoom } from '../utils/chartConfig';
 
 export default function ChartContainer({
   title,
@@ -9,9 +9,27 @@ export default function ChartContainer({
   tableData,
   dataDescription = 'chart data',
 }) {
+  const [isZoomed, setIsZoomed] = useState(false);
+
   const handleExport = useCallback(() => {
     exportChartAsPNG(chartRef, exportFilename);
   }, [chartRef, exportFilename]);
+
+  const handleResetZoom = useCallback(() => {
+    resetChartZoom(chartRef);
+    setIsZoomed(false);
+  }, [chartRef]);
+
+  // Track zoom state via mouseup on chart container
+  const handleMouseUp = useCallback(() => {
+    // Small delay to let Chart.js process the zoom
+    setTimeout(() => {
+      if (chartRef.current) {
+        const zoomLevel = chartRef.current.getZoomLevel?.();
+        setIsZoomed(zoomLevel !== undefined && zoomLevel !== 1);
+      }
+    }, 50);
+  }, [chartRef]);
 
   return (
     <div className="relative overflow-hidden rounded-sm bg-cyber-bg/80 backdrop-blur-xl border border-cyber-border p-6 shadow-cyber">
@@ -19,20 +37,38 @@ export default function ChartContainer({
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-primary/30 to-transparent" />
 
       <div className="flex justify-between items-center mb-5">
-        <h2 className="text-cyber-primary text-xl font-light uppercase tracking-wider opacity-90">
-          {title}
-        </h2>
-        <button
-          onClick={handleExport}
-          aria-label={`Export ${title} as PNG image`}
-          title="Export chart as PNG"
-          className="bg-cyber-primary/10 border border-cyber-primary/30 text-cyber-primary px-3 py-1.5 rounded-sm cursor-pointer text-xs font-light uppercase tracking-wider transition-all duration-200 hover:bg-cyber-primary/20 hover:border-cyber-primary hover:shadow-[0_0_10px_rgba(0,255,255,0.3)] hover:-translate-y-px active:translate-y-0"
-        >
-          Export PNG
-        </button>
+        <div className="flex items-center gap-4">
+          <h2 className="text-cyber-primary text-xl font-light uppercase tracking-wider opacity-90">
+            {title}
+          </h2>
+          <span className="text-cyber-muted text-xs opacity-60 hidden sm:inline">
+            Drag to select range
+          </span>
+        </div>
+        <div className="flex gap-2">
+          {isZoomed && (
+            <button
+              onClick={handleResetZoom}
+              aria-label="Reset zoom level"
+              title="Reset zoom"
+              className="bg-cyber-warning/10 border border-cyber-warning/30 text-cyber-warning px-3 py-1.5 rounded-sm cursor-pointer text-xs font-light uppercase tracking-wider transition-all duration-200 hover:bg-cyber-warning/20 hover:border-cyber-warning hover:shadow-[0_0_10px_rgba(255,200,0,0.3)] hover:-translate-y-px active:translate-y-0"
+            >
+              Reset Zoom
+            </button>
+          )}
+          <button
+            onClick={handleExport}
+            aria-label={`Export ${title} as PNG image`}
+            title="Export chart as PNG"
+            className="bg-cyber-primary/10 border border-cyber-primary/30 text-cyber-primary px-3 py-1.5 rounded-sm cursor-pointer text-xs font-light uppercase tracking-wider transition-all duration-200 hover:bg-cyber-primary/20 hover:border-cyber-primary hover:shadow-[0_0_10px_rgba(0,255,255,0.3)] hover:-translate-y-px active:translate-y-0"
+          >
+            Export PNG
+          </button>
+        </div>
       </div>
 
       <div
+        onMouseUp={handleMouseUp}
         className="relative h-[400px] bg-black/30 border border-cyber-primary/5 p-px rounded-sm"
         role="img"
         aria-label={`${title} chart showing ${dataDescription}`}

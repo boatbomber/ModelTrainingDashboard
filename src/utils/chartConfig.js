@@ -10,6 +10,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import {
   formatValue,
   calculateProgress,
@@ -26,7 +27,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  zoomPlugin
 );
 
 // Background color plugin for chart exports
@@ -102,6 +104,62 @@ export function getBaseChartOptions() {
         borderWidth: 1,
         titleColor: '#00ffff',
         bodyColor: 'rgba(255, 255, 255, 0.8)',
+      },
+      zoom: {
+        zoom: {
+          drag: {
+            enabled: true,
+            backgroundColor: 'rgba(0, 255, 255, 0.1)',
+            borderColor: 'rgba(0, 255, 255, 0.5)',
+            borderWidth: 1,
+          },
+          mode: 'x',
+          onZoomComplete: ({ chart }) => {
+            // Auto-fit Y axis to visible data
+            const xScale = chart.scales.x;
+            const yScale = chart.scales.y;
+            const xMin = xScale.min;
+            const xMax = xScale.max;
+
+            // Store original Y limits on first zoom
+            if (chart._originalYMin === undefined) {
+              chart._originalYMin = yScale.options.min;
+              chart._originalYMax = yScale.options.max;
+            }
+
+            let yMin = Infinity;
+            let yMax = -Infinity;
+
+            chart.data.datasets.forEach((dataset) => {
+              // Skip envelope datasets (upper/lower bounds)
+              if (dataset.label?.includes('Upper') || dataset.label?.includes('Lower')) {
+                return;
+              }
+
+              dataset.data.forEach((point, index) => {
+                const x = chart.data.labels[index];
+                if (x >= xMin && x <= xMax) {
+                  const y = typeof point === 'object' ? point.y : point;
+                  if (y !== null && y !== undefined && !isNaN(y)) {
+                    yMin = Math.min(yMin, y);
+                    yMax = Math.max(yMax, y);
+                  }
+                }
+              });
+            });
+
+            if (yMin !== Infinity && yMax !== -Infinity) {
+              // Add 5% padding
+              const padding = (yMax - yMin) * 0.05;
+              yScale.options.min = yMin - padding;
+              yScale.options.max = yMax + padding;
+              chart.update('none');
+            }
+          },
+        },
+        limits: {
+          x: { min: 'original', max: 'original' },
+        },
       },
     },
   };
@@ -246,6 +304,28 @@ export function getRewardColor(index) {
     [99, 255, 132],
   ];
   return colors[index % colors.length];
+}
+
+/**
+ * Reset chart zoom including Y-axis limits
+ */
+export function resetChartZoom(chartRef) {
+  if (!chartRef.current) return;
+
+  const chart = chartRef.current;
+
+  // Reset X zoom
+  chart.resetZoom();
+
+  // Restore original Y limits if they were stored
+  if (chart._originalYMin !== undefined || chart._originalYMax !== undefined) {
+    const yScale = chart.scales.y;
+    yScale.options.min = chart._originalYMin;
+    yScale.options.max = chart._originalYMax;
+    delete chart._originalYMin;
+    delete chart._originalYMax;
+    chart.update('none');
+  }
 }
 
 /**
