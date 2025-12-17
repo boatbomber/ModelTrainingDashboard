@@ -77,6 +77,10 @@ export default function Header() {
         </span>
       </div>
 
+      <p className="mt-4 text-cyber-muted/70 text-xs font-mono">
+        All processing happens locally in your browser. No data ever leaves your device.
+      </p>
+
       {error && (
         <div
           className="mt-5 p-4 bg-red-500/10 border border-red-500/30 text-cyber-error rounded-sm font-mono text-sm cursor-pointer"
